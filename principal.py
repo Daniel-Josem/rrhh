@@ -1,98 +1,116 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QFrame, QLabel
-from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QPushButton, QLabel,
+    QVBoxLayout, QHBoxLayout, QSizePolicy, QSpacerItem
+)
+from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import Qt
 import sys
-from nomina import nominas
-from asistencia import asistencias
-from empleado import empleados
-from informe_mensual import informes_mensuales
+import sqlite3
+from asistencia import VentanaAsistencia
+from empleado import ventana_empleados 
+from nomina import ventana_nomina 
+
+# Colores fijos
+color_boton = "#007ACC"
+color_fondo = "#fcfcfc"
+
+def conectar():
+    return sqlite3.connect("rrhh.db")
 
 class PrincipalWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Panel Principal")
-        self.setGeometry(100, 100, 800, 600)  # Tamaño inicial
-        self.setStyleSheet("background-color: #fff8e1;")  # Blanco cremoso
+        self.setStyleSheet(f"background-color: {color_fondo};")
         self.init_ui()
         self.showFullScreen()
 
     def init_ui(self):
-        # Barra superior
-        self.barra_superior = QFrame(self)
-        self.barra_superior.setStyleSheet("background-color: #0288d1;")  # Azul claro
-        self.barra_superior.setGeometry(0, 145, 1500, 80)
+        layout_principal = QVBoxLayout(self)
+        layout_principal.setContentsMargins(20, 20, 20, 20)
+        layout_principal.setSpacing(20)
 
-        # Título centrado en la barra
-        self.titulo = QLabel("RECURSOS HUMANOS", self)
-        self.titulo.setFont(QFont("Arial", 24, QFont.Bold))
-        self.titulo.setStyleSheet("color: black;")
-        self.titulo.setGeometry(500, 30, 400, 40)
-        self.titulo.setAlignment(Qt.AlignCenter)
+        titulo = QLabel("RECURSOS HUMANOS")
+        titulo.setFont(QFont("Arial", 32, QFont.Bold))
+        titulo.setStyleSheet("color: black;")
+        titulo.setAlignment(Qt.AlignCenter)
+        layout_principal.addWidget(titulo)
 
-        # Botón Empleados
-        self.boton_empleados = QPushButton("Empleados", self)
-        self.boton_empleados.setGeometry(50, 160, 200, 50)
+        layout_botones = QHBoxLayout()
+        layout_botones.setSpacing(30)
 
-        # Botón Informes
-        self.boton_informes = QPushButton("Informes", self)
-        self.boton_informes.setGeometry(400, 160, 200, 50)
-
-        # Botón Asistencias
-        self.boton_asistencias = QPushButton("Asistencias", self)
-        self.boton_asistencias.setGeometry(750, 160, 200, 50)
-
-        # Botón Nóminas
-        self.boton_nominas = QPushButton("Nóminas", self)
-        self.boton_nominas.setGeometry(1110, 160, 200, 50)
-
-        # Botón Cerrar
-        self.boton_salir = QPushButton("Cerrar", self)
-        self.boton_salir.setGeometry(600, 700, 200, 50)
-
-        # Estilo de botones
         botones = [
-            self.boton_nominas,
-            self.boton_asistencias,
-            self.boton_empleados,
-            self.boton_informes,
-            self.boton_salir
+            ("Nomina", self.abrir_nomina),
+            ("Gestion de empleados", self.abrir_empleados),
+            ("Asistencias", self.abrir_asistencias),
+            ("Informe Mensual", self.abrir_informe)
         ]
-        for boton in botones:
-            boton.setStyleSheet("""
-                QPushButton {
-                    background-color: black;
+
+        for texto, funcion in botones:
+            boton = QPushButton(texto)
+            boton.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+            boton.setFixedHeight(80)
+            boton.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {color_boton};
                     color: white;
-                    font-size: 16px;
-                    border-radius: 5px;
-                }
-                QPushButton:hover {
+                    font-size: 14px;
+                    border-radius: 6px;
+                }}
+                QPushButton:hover {{
                     background-color: #444;
-                }
+                }}
             """)
+            boton.clicked.connect(funcion)
+            layout_botones.addWidget(boton)
 
-        # Conexiones
-        self.boton_nominas.clicked.connect(self.abrir_nominas)
-        self.boton_asistencias.clicked.connect(self.abrir_asistencias)
-        self.boton_empleados.clicked.connect(self.abrir_empleados)
-        self.boton_informes.clicked.connect(self.abrir_informes)
-        self.boton_salir.clicked.connect(self.close)
+        layout_principal.addLayout(layout_botones)
 
-    # Métodos para cambiar de ventana
-    def abrir_nominas(self):
-        self.close()
-        nominas()
+        self.imagen = QLabel()
+        pixmap = QPixmap("image/recursos_humanos.png")
+        if not pixmap.isNull():
+            self.imagen.setPixmap(pixmap.scaledToWidth(1000, Qt.SmoothTransformation))
+        else:
+            self.imagen.setText("No se encontró la imagen 'recursos_humanos.png'")
+            self.imagen.setStyleSheet("color: red; font-size: 16px;")
+        self.imagen.setAlignment(Qt.AlignCenter)
+        layout_principal.addWidget(self.imagen)
+
+        layout_principal.addSpacerItem(QSpacerItem(50, 100, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+        boton_salir = QPushButton("Cerrar")
+        boton_salir.setFixedHeight(50)
+        boton_salir.setFixedWidth(80)
+        boton_salir.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {color_boton};
+                color: white;
+                font-size: 14px;
+                border-radius: 5px;
+            }}
+            QPushButton:hover {{
+                background-color: #444;
+            }}
+        """)
+        boton_salir.clicked.connect(self.close)
+        layout_principal.addWidget(boton_salir, alignment=Qt.AlignCenter)
 
     def abrir_asistencias(self):
-        self.close()
-        asistencias()
+        self.hide()
+        self.ventana_asistencia = VentanaAsistencia(self)
+        self.ventana_asistencia.show()
 
     def abrir_empleados(self):
-        self.close()
-        empleados()
+        self.hide()
+        ventana_empleados(self)
 
-    def abrir_informes(self):
-        self.close()
-        informes_mensuales()
+
+    def abrir_nomina(self):
+        self.hide()
+        ventana_nomina(parent=self)
+
+    def abrir_informe(self):
+       print("Informacion")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

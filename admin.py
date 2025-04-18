@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout, QFrame, QMessageBox
 )
 from PyQt5.QtGui import QPixmap, QFont, QPalette, QBrush
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt       
 
 class LoginAdmin(QWidget):
     def __init__(self):
