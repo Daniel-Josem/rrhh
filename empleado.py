@@ -18,8 +18,15 @@ def ventana_empleados(parent=None):
             self.parent = parent
 
             self.entries = {}
-            # Agregamos 'cc' como primer campo
-            self.campos = [("Cédula", "cc"), ("Nombre", "nombre"), ("Puesto", "puesto"), ("Salario", "salario"), ("Fecha Ingreso", "fecha_ingreso")]
+            # Agregamos 'apellido' después de 'nombre'
+            self.campos = [
+                ("Cédula", "cc"),
+                ("Nombre", "nombre"),
+                ("Apellido", "apellido"),
+                ("Puesto", "puesto"),
+                ("Salario", "salario"),
+                ("Fecha Ingreso", "fecha_ingreso")
+            ]
 
             self.layout = QVBoxLayout()
             self.form_layout = QHBoxLayout()
@@ -72,8 +79,8 @@ def ventana_empleados(parent=None):
 
             # Tabla de empleados
             self.tabla = QTableWidget()
-            self.tabla.setColumnCount(5)
-            self.tabla.setHorizontalHeaderLabels(["Cédula", "Nombre", "Puesto", "Salario", "Ingreso"])
+            self.tabla.setColumnCount(6)
+            self.tabla.setHorizontalHeaderLabels(["Cédula", "Nombre", "Apellido", "Puesto", "Salario", "Ingreso"])
             self.tabla.horizontalHeader().setStretchLastSection(True)
             self.tabla.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
             self.layout.addWidget(self.tabla)
@@ -99,7 +106,7 @@ def ventana_empleados(parent=None):
             self.tabla.setRowCount(0)
             conn = conectar()
             cursor = conn.cursor()
-            cursor.execute("SELECT cc, nombre, puesto, salario, fecha_ingreso FROM empleados")
+            cursor.execute("SELECT cc, nombre, apellido, puesto, salario, fecha_ingreso FROM empleados")
             for row_idx, row_data in enumerate(cursor.fetchall()):
                 self.tabla.insertRow(row_idx)
                 for col_idx, value in enumerate(row_data):
@@ -112,7 +119,10 @@ def ventana_empleados(parent=None):
                 try:
                     conn = conectar()
                     cursor = conn.cursor()
-                    cursor.execute("INSERT INTO empleados (cc, nombre, puesto, salario, fecha_ingreso) VALUES (?, ?, ?, ?, ?)", datos)
+                    cursor.execute(
+                        "INSERT INTO empleados (cc, nombre, apellido, puesto, salario, fecha_ingreso) VALUES (?, ?, ?, ?, ?, ?)",
+                        datos
+                    )
                     conn.commit()
                     conn.close()
                     self.cargar()
@@ -124,7 +134,7 @@ def ventana_empleados(parent=None):
 
         def editar(self):
             selected = self.tabla.selectedItems()
-            if selected and len(selected) >= 5:
+            if selected and len(selected) >= 6:
                 self.selected_cc = selected[0].text()
                 for i, (_, key) in enumerate(self.campos):
                     self.entries[key].setText(selected[i].text())
@@ -140,9 +150,9 @@ def ventana_empleados(parent=None):
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE empleados 
-                SET nombre = ?, puesto = ?, salario = ?, fecha_ingreso = ?
+                SET nombre = ?, apellido = ?, puesto = ?, salario = ?, fecha_ingreso = ?
                 WHERE cc = ?
-            """, (datos[1], datos[2], datos[3], datos[4], datos[0]))
+            """, (datos[1], datos[2], datos[3], datos[4], datos[5], datos[0]))
             conn.commit()
             conn.close()
             self.cargar()

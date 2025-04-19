@@ -34,7 +34,7 @@ class VentanaAsistencia(QWidget):
         # Barra de búsqueda
         layout_busqueda = QHBoxLayout()
         self.barra_busqueda = QLineEdit()
-        self.barra_busqueda.setPlaceholderText("Buscar por CC o Nombre...")
+        self.barra_busqueda.setPlaceholderText("Buscar por CC, Nombre o Apellido...")
         self.barra_busqueda.setStyleSheet("padding: 6px; font-size: 14px;")
         boton_buscar = QPushButton("Buscar")
         boton_buscar.setStyleSheet(f"""
@@ -56,8 +56,8 @@ class VentanaAsistencia(QWidget):
 
         # Tabla
         self.tabla = QTableWidget()
-        self.tabla.setColumnCount(6)
-        self.tabla.setHorizontalHeaderLabels(["ID", "CC", "Nombre", "Fecha", "Entrada", "Salida"])
+        self.tabla.setColumnCount(7)
+        self.tabla.setHorizontalHeaderLabels(["ID", "CC", "Nombre", "Apellido", "Fecha", "Entrada", "Salida"])
         self.tabla.horizontalHeader().setStretchLastSection(True)
         self.tabla.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.tabla)
@@ -118,13 +118,13 @@ class VentanaAsistencia(QWidget):
             conn = conectar()
             cursor = conn.cursor()
             query_base = """
-                SELECT a.id, e.cc, e.nombre, a.fecha, a.hora_entrada, a.hora_salida
+                SELECT a.id, e.cc, e.nombre, e.apellido, a.fecha, a.hora_entrada, a.hora_salida
                 FROM asistencia a
                 JOIN empleados e ON a.id_empleado = e.cc
             """
             if filtro:
-                query_base += " WHERE e.nombre LIKE ? OR e.cc LIKE ?"
-                parametros = (f"%{filtro}%", f"%{filtro}%")
+                query_base += " WHERE e.nombre LIKE ? OR e.apellido LIKE ? OR e.cc LIKE ?"
+                parametros = (f"%{filtro}%", f"%{filtro}%", f"%{filtro}%")
                 cursor.execute(query_base + " ORDER BY a.fecha DESC", parametros)
             else:
                 cursor.execute(query_base + " ORDER BY a.fecha DESC")

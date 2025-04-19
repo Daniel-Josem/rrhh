@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS empleados (
     cc INT PRIMARY KEY,
     nombre TEXT NOT NULL,
+    apellido TEXT NOT NULL,
     puesto TEXT,
     salario INT,
     fecha_ingreso TEXT
@@ -38,10 +39,10 @@ INSERT INTO usuario_rrhh (usuario, contraseña) VALUES
 ('usuario2', 'pass2');
 
 -- Insertar empleados de prueba
-INSERT INTO empleados (cc, nombre, puesto, salario, fecha_ingreso) VALUES
-(1046692761, 'Juan Pérez', 'Contador', 1500000, '2023-03-01'),
-(1046692762, 'Ana Gómez', 'Recepcionista', 1000000, '2022-11-15'),
-(1046692763, 'Carlos Ruiz', 'Técnico', 1200000, '2024-01-10');
+INSERT INTO empleados (cc, nombre, apellido, puesto, salario, fecha_ingreso) VALUES
+(1046692761, 'Juan', 'Pérez', 'Contador', 1500000, '2023-03-01'),
+(1046692762, 'Ana' ,'Gómez', 'Recepcionista', 1000000, '2022-11-15'),
+(1046692763, 'Carlos',' Ruiz', 'Técnico', 1200000, '2024-01-10');
 
 -- Insertar asistencias de prueba
 INSERT INTO asistencia (id_empleado, fecha, hora_entrada, hora_salida) VALUES

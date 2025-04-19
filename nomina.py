@@ -142,10 +142,11 @@ def ventana_nomina(parent=None):
         def cargar_empleados(self):
             conn = conectar()
             cursor = conn.cursor()
-            cursor.execute("SELECT cc, nombre, salario FROM empleados")  # Cambié 'id' por 'cc'
+            cursor.execute("SELECT cc, nombre, apellido, salario FROM empleados")
             self.lista_empleados = cursor.fetchall()
             for emp in self.lista_empleados:
-                self.cb_empleado.addItem(f"{emp[0]} - {emp[1]}")  # Ahora emp[0] es el 'cc'
+                cc, nombre, apellido, salario = emp
+                self.cb_empleado.addItem(f"{cc} - {nombre} {apellido}")
             self.cb_empleado.currentIndexChanged.connect(self.actualizar_salario)
             if self.lista_empleados:
                 self.actualizar_salario()
@@ -154,7 +155,7 @@ def ventana_nomina(parent=None):
         def actualizar_salario(self):
             idx = self.cb_empleado.currentIndex()
             if idx >= 0:
-                salario = float(self.lista_empleados[idx][2])
+                salario = float(self.lista_empleados[idx][3])
                 self.le_salario_base.setText(formatear_pesos(salario))
 
                 salud = salario * 0.04

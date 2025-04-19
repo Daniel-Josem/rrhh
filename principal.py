@@ -9,6 +9,7 @@ import sqlite3
 from asistencia import VentanaAsistencia
 from empleado import ventana_empleados 
 from nomina import ventana_nomina 
+from informe import ventana_informe  # ✅ Importación corregida
 
 # Colores fijos
 color_boton = "#007ACC"
@@ -40,13 +41,25 @@ class PrincipalWindow(QWidget):
         layout_botones.setSpacing(30)
 
         botones = [
-            ("Nomina", self.abrir_nomina),
-            ("Gestion de empleados", self.abrir_empleados),
-            ("Asistencias", self.abrir_asistencias),
-            ("Informe Mensual", self.abrir_informe)
+            ("Nomina", self.abrir_nomina, "image/icon_nomina.jpg"),
+            ("Gestion de empleados", self.abrir_empleados, "image/icon_gestion.jpg"),
+            ("Asistencias", self.abrir_asistencias, "image/icon_asistencia.jpg"),
+            ("Informe Mensual", self.abrir_informe, "image/icon_informe.jpg")
         ]
 
-        for texto, funcion in botones:
+        for texto, funcion, ruta_imagen in botones:
+            layout_boton = QVBoxLayout()
+            layout_boton.setSpacing(10)
+
+            icono = QLabel()
+            pixmap = QPixmap(ruta_imagen)
+            if not pixmap.isNull():
+                icono.setPixmap(pixmap.scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            else:
+                icono.setText("❌")
+                icono.setStyleSheet("color: red; font-size: 16px;")
+            icono.setAlignment(Qt.AlignCenter)
+
             boton = QPushButton(texto)
             boton.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
             boton.setFixedHeight(80)
@@ -62,25 +75,28 @@ class PrincipalWindow(QWidget):
                 }}
             """)
             boton.clicked.connect(funcion)
-            layout_botones.addWidget(boton)
+
+            layout_boton.addWidget(icono)
+            layout_boton.addWidget(boton)
+            layout_botones.addLayout(layout_boton)
 
         layout_principal.addLayout(layout_botones)
 
-        self.imagen = QLabel()
-        pixmap = QPixmap("image/recursos_humanos.png")
-        if not pixmap.isNull():
-            self.imagen.setPixmap(pixmap.scaledToWidth(1000, Qt.SmoothTransformation))
+        imagen_inferior = QLabel()
+        pixmap_inferior = QPixmap("image/banner_inferior.jpg")
+        if not pixmap_inferior.isNull():
+            imagen_inferior.setPixmap(pixmap_inferior.scaledToWidth(1000, Qt.SmoothTransformation))
         else:
-            self.imagen.setText("No se encontró la imagen 'recursos_humanos.png'")
-            self.imagen.setStyleSheet("color: red; font-size: 16px;")
-        self.imagen.setAlignment(Qt.AlignCenter)
-        layout_principal.addWidget(self.imagen)
+            imagen_inferior.setText("No se encontró 'banner_inferior.jpg'")
+            imagen_inferior.setStyleSheet("color: red; font-size: 16px;")
+        imagen_inferior.setAlignment(Qt.AlignCenter)
+        layout_principal.addWidget(imagen_inferior)
 
         layout_principal.addSpacerItem(QSpacerItem(50, 100, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
         boton_salir = QPushButton("Cerrar")
         boton_salir.setFixedHeight(50)
-        boton_salir.setFixedWidth(80)
+        boton_salir.setFixedWidth(100)
         boton_salir.setStyleSheet(f"""
             QPushButton {{
                 background-color: {color_boton};
@@ -104,13 +120,14 @@ class PrincipalWindow(QWidget):
         self.hide()
         ventana_empleados(self)
 
-
     def abrir_nomina(self):
         self.hide()
         ventana_nomina(parent=self)
 
     def abrir_informe(self):
-       print("Informacion")
+        self.hide()
+        self.ventana_informe = ventana_informe(self)  # ✅ Cambio aquí
+        self.ventana_informe.show()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
