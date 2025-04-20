@@ -72,10 +72,21 @@ class ventana_informe(QWidget):
         self.tabla.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.tabla)
 
-        self.totales_label = QLabel("")
-        self.totales_label.setAlignment(Qt.AlignRight)
-        self.totales_label.setFont(QFont("Arial", 12, QFont.Bold))
-        layout.addWidget(self.totales_label)
+        # Título de la segunda tabla
+        self.lbl_totales_titulo = QLabel("Totales del Mes")
+        self.lbl_totales_titulo.setAlignment(Qt.AlignCenter)
+        self.lbl_totales_titulo.setFont(QFont("Arial", 14, QFont.Bold))
+        layout.addWidget(self.lbl_totales_titulo)
+
+        # Segunda tabla para totales del mes
+        self.tabla_totales = QTableWidget()
+        self.tabla_totales.setRowCount(1)
+        self.tabla_totales.setColumnCount(4)
+        self.tabla_totales.setHorizontalHeaderLabels([
+            "Total Empleados", "Nómina Bruta", "Total Préstamos", "Neto a Pagar"
+        ])
+        self.tabla_totales.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        layout.addWidget(self.tabla_totales)
 
         boton_regresar = QPushButton("Cerrar")
         boton_regresar.setStyleSheet("background-color: #007ACC; color: white; padding: 6px 12px; border-radius: 10px;")
@@ -133,12 +144,12 @@ class ventana_informe(QWidget):
                 self.total_neto += datos[10]
 
             self.titulo.setText(f"Informe de Nómina - {nombre_mes_es} {ano}")
-            self.totales_label.setText(
-                f"Total empleados: {self.total_empleados} | "
-                f"Nómina Bruta: ${self.total_bruto:,.0f} | "
-                f"Total Préstamos: ${self.total_prestamos:,.0f} | "
-                f"Neto a Pagar: ${self.total_neto:,.0f}".replace(",", ".")
-            )
+
+            # Llenar la segunda tabla
+            self.tabla_totales.setItem(0, 0, QTableWidgetItem(str(self.total_empleados)))
+            self.tabla_totales.setItem(0, 1, QTableWidgetItem(f"${self.total_bruto:,.0f}".replace(",", ".")))
+            self.tabla_totales.setItem(0, 2, QTableWidgetItem(f"${self.total_prestamos:,.0f}".replace(",", ".")))
+            self.tabla_totales.setItem(0, 3, QTableWidgetItem(f"${self.total_neto:,.0f}".replace(",", ".")))
 
             conn.close()
 
@@ -183,7 +194,6 @@ class ventana_informe(QWidget):
             ]))
             elementos.append(tabla_pdf)
 
-            # Pie de totales
             resumen = Paragraph(
                 f"<b>Total empleados:</b> {self.total_empleados} | "
                 f"<b>Nómina Bruta:</b> ${self.total_bruto:,.0f} | "

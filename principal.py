@@ -8,7 +8,7 @@ import sys
 import sqlite3
 from asistencia import VentanaAsistencia
 from empleado import ventana_empleados 
-from nomina import ventana_nomina 
+from nomina import ventana_nomina
 from informe import ventana_informe  # ✅ Importación corregida
 
 # Colores fijos

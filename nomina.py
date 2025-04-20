@@ -1,11 +1,12 @@
 from PyQt5.QtWidgets import (
     QDialog, QLabel, QComboBox, QLineEdit, QPushButton,
     QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
-    QHeaderView, QWidget, QScrollArea
+    QHeaderView, QWidget, QScrollArea, QMessageBox, QDateEdit
 )
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QDate
 import sqlite3
+import datetime
 
 
 def conectar():
@@ -44,14 +45,21 @@ def ventana_nomina(parent=None):
             self.le_salario_base.setReadOnly(True)
             self.le_salario_base.setFixedHeight(25)
 
+            self.fecha_registro = QDateEdit()
+            self.fecha_registro.setCalendarPopup(True)
+            self.fecha_registro.setDate(QDate.currentDate())
+            self.fecha_registro.setFixedHeight(28)
+
             fila_superior.addWidget(QLabel("EMPLEADO"))
             fila_superior.addWidget(self.cb_empleado)
+            fila_superior.addWidget(QLabel("FECHA REGISTRO"))
+            fila_superior.addWidget(self.fecha_registro)
             fila_superior.addStretch()
             fila_superior.addWidget(QLabel("SALARIO BASE"))
             fila_superior.addWidget(self.le_salario_base)
             main_layout.addLayout(fila_superior)
 
-            # TABLA DE HORAS INGRESADAS
+            # TABLA DE HORAS
             self.horas_extra_labels = [
                 "Horas extras diurnas",
                 "Horas extras nocturnas",
@@ -115,13 +123,25 @@ def ventana_nomina(parent=None):
 
             main_layout.addWidget(self.tabla)
 
+            botones_layout = QHBoxLayout()
+
+            guardar_btn = QPushButton("Guardar")
+            guardar_btn.setFixedHeight(50)
+            guardar_btn.setFixedWidth(200)
+            guardar_btn.clicked.connect(self.guardar_nomina)
+            guardar_btn.setStyleSheet(self.estilo_boton("#28a745", "#218838"))
+            botones_layout.addWidget(guardar_btn)
+
             cerrar_btn = QPushButton("Cerrar")
             cerrar_btn.setFixedHeight(50)
+            cerrar_btn.setFixedWidth(200)
             cerrar_btn.clicked.connect(self.volver_a_principal)
             cerrar_btn.setStyleSheet(self.estilo_boton("#007ACC", "#005A9E"))
-            main_layout.addWidget(cerrar_btn, alignment=Qt.AlignCenter)
+            botones_layout.addWidget(cerrar_btn)
 
+            main_layout.addLayout(botones_layout)
             self.setLayout(main_layout)
+
             self.cargar_empleados()
 
         def estilo_boton(self, color_base, color_hover):
@@ -192,10 +212,8 @@ def ventana_nomina(parent=None):
                     "HORAS EXTRAS DIURNA": calcular_horas("Horas extras diurnas", "HORAS EXTRAS DIURNA", 1.25),
                     "HORAS EXTRAS NOCTURNAS": calcular_horas("Horas extras nocturnas", "HORAS EXTRAS NOCTURNAS", 1.75),
                     "RECARGOS": calcular_horas("Recargos nocturnos", "RECARGOS", 1.35),
-                    "HORAS EXTRAS DOMINICALES DIURNAS": calcular_horas(
-                        "Horas extras dominicales diurnas", "HORAS EXTRAS DOMINICALES DIURNAS", 2.0),
-                    "HORAS EXTRAS DOMINICALES NOCTURNAS": calcular_horas(
-                        "Horas extras dominicales nocturnas", "HORAS EXTRAS DOMINICALES NOCTURNAS", 2.5)
+                    "HORAS EXTRAS DOMINICALES DIURNAS": calcular_horas("Horas extras dominicales diurnas", "HORAS EXTRAS DOMINICALES DIURNAS", 2.0),
+                    "HORAS EXTRAS DOMINICALES NOCTURNAS": calcular_horas("Horas extras dominicales nocturnas", "HORAS EXTRAS DOMINICALES NOCTURNAS", 2.5)
                 }
 
                 total_devengado = salario + sum(valores.values())
@@ -212,6 +230,29 @@ def ventana_nomina(parent=None):
 
             except Exception as e:
                 print("Error en el cálculo:", e)
+
+        def guardar_nomina(self):
+            try:
+                conn = conectar()
+                cursor = conn.cursor()
+                idx = self.cb_empleado.currentIndex()
+                cc = self.lista_empleados[idx][0]
+                fecha = self.fecha_registro.date().toString("yyyy-MM-dd")
+                neto = self.campos["NETO A PAGAR"].text().replace(".", "")
+                devengado = self.campos["TOTAL DEVENGADO"].text().replace(".", "")
+                deducido = self.campos["TOTAL DEDUCIDO"].text().replace(".", "")
+
+                cursor.execute("""
+                    INSERT INTO nominas (cc_empleado, fecha_registro, total_devengado, total_deducido, neto)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (cc, fecha, devengado, deducido, neto))
+
+                conn.commit()
+                conn.close()
+
+                QMessageBox.information(self, "Éxito", "Nómina guardada exitosamente.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"No se pudo guardar la nómina: {e}")
 
         def volver_a_principal(self):
             self.close()

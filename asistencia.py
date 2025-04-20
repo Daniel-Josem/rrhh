@@ -121,9 +121,10 @@ class VentanaAsistencia(QWidget):
                 SELECT a.id, e.cc, e.nombre, e.apellido, a.fecha, a.hora_entrada, a.hora_salida
                 FROM asistencia a
                 JOIN empleados e ON a.id_empleado = e.cc
+                WHERE e.estado = 'Activo'
             """
             if filtro:
-                query_base += " WHERE e.nombre LIKE ? OR e.apellido LIKE ? OR e.cc LIKE ?"
+                query_base += " AND (e.nombre LIKE ? OR e.apellido LIKE ? OR e.cc LIKE ?)"
                 parametros = (f"%{filtro}%", f"%{filtro}%", f"%{filtro}%")
                 cursor.execute(query_base + " ORDER BY a.fecha DESC", parametros)
             else:
