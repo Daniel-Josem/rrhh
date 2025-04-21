@@ -6,16 +6,12 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QDate
 import sqlite3
-import datetime
-
 
 def conectar():
     return sqlite3.connect("rrhh.db")
 
-
 def formatear_pesos(valor):
     return f"{int(round(valor)):,}".replace(",", ".")
-
 
 def ventana_nomina(parent=None):
     class NominaWindow(QDialog):
@@ -25,10 +21,9 @@ def ventana_nomina(parent=None):
             self.setStyleSheet("background-color: #fcfcfc;")
             self.showMaximized()
 
-            main_layout = QVBoxLayout()
+            main_layout = QVBoxLayout(self)
             main_layout.setSpacing(10)
             main_layout.setContentsMargins(10, 10, 10, 10)
-            main_layout.setAlignment(Qt.AlignTop)
 
             titulo = QLabel("NÓMINA")
             titulo.setFont(QFont("Arial", 24, QFont.Bold))
@@ -36,10 +31,10 @@ def ventana_nomina(parent=None):
             main_layout.addWidget(titulo)
 
             fila_superior = QHBoxLayout()
-            fila_superior.setSpacing(10)
 
             self.cb_empleado = QComboBox()
             self.cb_empleado.setFixedHeight(28)
+            self.cb_empleado.currentIndexChanged.connect(self.actualizar_salario)
 
             self.le_salario_base = QLineEdit()
             self.le_salario_base.setReadOnly(True)
@@ -59,7 +54,6 @@ def ventana_nomina(parent=None):
             fila_superior.addWidget(self.le_salario_base)
             main_layout.addLayout(fila_superior)
 
-            # TABLA DE HORAS
             self.horas_extra_labels = [
                 "Horas extras diurnas",
                 "Horas extras nocturnas",
@@ -93,7 +87,6 @@ def ventana_nomina(parent=None):
             scroll.setMaximumHeight(200)
             main_layout.addWidget(scroll)
 
-            # TABLA DE RESULTADOS
             self.etiquetas = [
                 "AUXILIO DE TRANSPORTE", "BONIFICACIONES", "PRESTAMO",
                 "HORAS EXTRAS DIURNA", "HORAS EXTRAS NOCTURNAS", "RECARGOS",
@@ -112,9 +105,12 @@ def ventana_nomina(parent=None):
                 self.tabla.setItem(i, 0, QTableWidgetItem(etiqueta))
                 campo = QLineEdit()
                 campo.setFixedHeight(25)
-                if etiqueta in ["TOTAL DEVENGADO", "TOTAL DEDUCIDO", "NETO A PAGAR", "SALUD", "PENSION",
-                                "HORAS EXTRAS DIURNA", "HORAS EXTRAS NOCTURNAS",
-                                "RECARGOS", "HORAS EXTRAS DOMINICALES DIURNAS", "HORAS EXTRAS DOMINICALES NOCTURNAS"]:
+                if etiqueta in [
+                    "TOTAL DEVENGADO", "TOTAL DEDUCIDO", "NETO A PAGAR",
+                    "SALUD", "PENSION", "HORAS EXTRAS DIURNA",
+                    "HORAS EXTRAS NOCTURNAS", "RECARGOS",
+                    "HORAS EXTRAS DOMINICALES DIURNAS", "HORAS EXTRAS DOMINICALES NOCTURNAS"
+                ]:
                     campo.setReadOnly(True)
                 campo.textChanged.connect(self.calcular_nomina)
                 self.tabla.setCellWidget(i, 1, campo)
@@ -142,6 +138,7 @@ def ventana_nomina(parent=None):
             main_layout.addLayout(botones_layout)
             self.setLayout(main_layout)
 
+            self.lista_empleados = []
             self.cargar_empleados()
 
         def estilo_boton(self, color_base, color_hover):
@@ -162,15 +159,13 @@ def ventana_nomina(parent=None):
         def cargar_empleados(self):
             conn = conectar()
             cursor = conn.cursor()
-            cursor.execute("SELECT cc, nombre, apellido, salario FROM empleados")
+            cursor.execute("SELECT cc, nombre, apellido, salario FROM empleados WHERE estado = 'Activo'")
             self.lista_empleados = cursor.fetchall()
-            for emp in self.lista_empleados:
-                cc, nombre, apellido, salario = emp
-                self.cb_empleado.addItem(f"{cc} - {nombre} {apellido}")
-            self.cb_empleado.currentIndexChanged.connect(self.actualizar_salario)
+            for cc, nombre, apellido, salario in self.lista_empleados:
+                self.cb_empleado.addItem(f"{nombre} {apellido} - CC: {cc}")
+            conn.close()
             if self.lista_empleados:
                 self.actualizar_salario()
-            conn.close()
 
         def actualizar_salario(self):
             idx = self.cb_empleado.currentIndex()
@@ -180,11 +175,11 @@ def ventana_nomina(parent=None):
 
                 salud = salario * 0.04
                 pension = salario * 0.04
-                auxilio_de_transporte = 200000 if salario <= 2602600 else 0
+                auxilio = 200000 if salario <= 2602600 else 0
 
                 self.campos["SALUD"].setText(formatear_pesos(salud))
                 self.campos["PENSION"].setText(formatear_pesos(pension))
-                self.campos["AUXILIO DE TRANSPORTE"].setText(formatear_pesos(auxilio_de_transporte))
+                self.campos["AUXILIO DE TRANSPORTE"].setText(formatear_pesos(auxilio))
 
                 self.calcular_nomina()
 
@@ -219,10 +214,11 @@ def ventana_nomina(parent=None):
                 total_devengado = salario + sum(valores.values())
                 self.campos["TOTAL DEVENGADO"].setText(formatear_pesos(total_devengado))
 
-                prestamo = obtener_valor("PRESTAMO")
-                salud = obtener_valor("SALUD")
-                pension = obtener_valor("PENSION")
-                total_deducido = prestamo + salud + pension
+                total_deducido = (
+                    obtener_valor("PRESTAMO") +
+                    obtener_valor("SALUD") +
+                    obtener_valor("PENSION")
+                )
                 self.campos["TOTAL DEDUCIDO"].setText(formatear_pesos(total_deducido))
 
                 neto = total_devengado - total_deducido
@@ -238,21 +234,58 @@ def ventana_nomina(parent=None):
                 idx = self.cb_empleado.currentIndex()
                 cc = self.lista_empleados[idx][0]
                 fecha = self.fecha_registro.date().toString("yyyy-MM-dd")
-                neto = self.campos["NETO A PAGAR"].text().replace(".", "")
-                devengado = self.campos["TOTAL DEVENGADO"].text().replace(".", "")
-                deducido = self.campos["TOTAL DEDUCIDO"].text().replace(".", "")
+                salario_str = self.le_salario_base.text().replace(".", "")
+                salario = float(salario_str or 0)
+
+                valores = {
+                    k: float(self.campos[k].text().replace(".", "") or 0)
+                    for k in ["AUXILIO DE TRANSPORTE", "BONIFICACIONES", "PRESTAMO",
+                            "HORAS EXTRAS DIURNA", "HORAS EXTRAS NOCTURNAS", "RECARGOS",
+                            "HORAS EXTRAS DOMINICALES DIURNAS", "HORAS EXTRAS DOMINICALES NOCTURNAS",
+                            "SALUD", "PENSION", "COMISIONES", "TOTAL DEVENGADO", "TOTAL DEDUCIDO", "NETO A PAGAR"]
+                }
 
                 cursor.execute("""
-                    INSERT INTO nominas (cc_empleado, fecha_registro, total_devengado, total_deducido, neto)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (cc, fecha, devengado, deducido, neto))
+                    INSERT INTO nominas (
+                        cc_empleado, fecha, salario_base,
+                        auxilio_transporte, bonificaciones, prestamo,
+                        horas_extras_diurnas, horas_extras_nocturnas,
+                        horas_extras_dominicales_diurnas, horas_extras_dominicales_nocturnas,
+                        recargos_nocturnos, salud, pension, comisiones,
+                        total_devengado, total_deducido, neto_pagar
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    cc, fecha, salario,
+                    valores["AUXILIO DE TRANSPORTE"], valores["BONIFICACIONES"], valores["PRESTAMO"],
+                    valores["HORAS EXTRAS DIURNA"], valores["HORAS EXTRAS NOCTURNAS"],
+                    valores["HORAS EXTRAS DOMINICALES DIURNAS"], valores["HORAS EXTRAS DOMINICALES NOCTURNAS"],
+                    valores["RECARGOS"], valores["SALUD"], valores["PENSION"], valores["COMISIONES"],
+                    valores["TOTAL DEVENGADO"], valores["TOTAL DEDUCIDO"], valores["NETO A PAGAR"]
+                ))
 
                 conn.commit()
                 conn.close()
-
                 QMessageBox.information(self, "Éxito", "Nómina guardada exitosamente.")
+                self.limpiar_formulario()
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"No se pudo guardar la nómina: {e}")
+
+        def limpiar_formulario(self):
+            self.cb_empleado.setCurrentIndex(0)
+            self.fecha_registro.setDate(QDate.currentDate())
+
+            for entrada in self.horas_inputs.values():
+                entrada.setText("")
+
+            for etiqueta, campo in self.campos.items():
+                if etiqueta in ["SALUD", "PENSION", "HORAS EXTRAS DIURNA", "HORAS EXTRAS NOCTURNAS",
+                                "RECARGOS", "HORAS EXTRAS DOMINICALES DIURNAS", "HORAS EXTRAS DOMINICALES NOCTURNAS",
+                                "TOTAL DEVENGADO", "TOTAL DEDUCIDO", "NETO A PAGAR",
+                                "AUXILIO DE TRANSPORTE"]:
+                    campo.setText("0")
+                else:
+                    campo.setText("")
+
 
         def volver_a_principal(self):
             self.close()

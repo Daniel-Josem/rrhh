@@ -126,7 +126,7 @@ class PrincipalWindow(QWidget):
 
     def abrir_informe(self):
         self.hide()
-        self.ventana_informe = ventana_informe(self)  # ✅ Cambio aquí
+        self.ventana_informe = ventana_informe()  # ✅ Cambio aquí
         self.ventana_informe.show()
 
 if __name__ == "__main__":

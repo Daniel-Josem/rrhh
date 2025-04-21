@@ -66,11 +66,6 @@ def ventana_empleados(parent=None):
             self.boton_editar.setFixedWidth(150)
             self.boton_editar.clicked.connect(self.editar)
 
-            self.boton_eliminar = QPushButton("Eliminar")
-            self.boton_eliminar.setStyleSheet(self.estilo_boton("#D32F2F", "#B71C1C"))
-            self.boton_eliminar.setFixedWidth(150)
-            self.boton_eliminar.clicked.connect(self.eliminar)
-
             self.boton_cerrar = QPushButton("Cerrar")
             self.boton_cerrar.setStyleSheet(self.estilo_boton("#007ACC", "#005A9E"))
             self.boton_cerrar.setFixedWidth(150)
@@ -79,7 +74,6 @@ def ventana_empleados(parent=None):
             layout_botones = QHBoxLayout()
             layout_botones.addWidget(self.boton_registrar)
             layout_botones.addWidget(self.boton_editar)
-            layout_botones.addWidget(self.boton_eliminar)
             layout_botones.addWidget(self.boton_cerrar)
             self.layout.addLayout(layout_botones)
 
@@ -185,19 +179,6 @@ def ventana_empleados(parent=None):
             self.boton_registrar.clicked.disconnect(self.actualizar)
             self.boton_registrar.clicked.connect(self.registrar)
             self.limpiar_formulario()
-
-        def eliminar(self):
-            selected = self.tabla.selectedItems()
-            if selected:
-                cc = selected[0].text()
-                conn = conectar()
-                cursor = conn.cursor()
-                cursor.execute("DELETE FROM empleados WHERE cc = ?", (cc,))
-                conn.commit()
-                conn.close()
-                self.cargar()
-            else:
-                QMessageBox.warning(self, "Advertencia", "Selecciona una fila para eliminar.")
 
         def limpiar_formulario(self):
             for key, entry in self.entries.items():

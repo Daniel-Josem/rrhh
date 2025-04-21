@@ -1,13 +1,14 @@
 import sys
 import os
 import sqlite3
-import subprocess
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout,
     QHBoxLayout, QFrame, QMessageBox
 )
 from PyQt5.QtGui import QPixmap, QFont, QPalette, QBrush
-from PyQt5.QtCore import Qt       
+from PyQt5.QtCore import Qt
+
+from principal import PrincipalWindow  # ✅ Importación directa
 
 class LoginAdmin(QWidget):
     def __init__(self):
@@ -129,11 +130,9 @@ class LoginAdmin(QWidget):
             resultado = cursor.fetchone()
 
             if resultado:
-                try:
-                    subprocess.Popen([sys.executable, "principal.py"])
-                    self.close()
-                except Exception as e:
-                    QMessageBox.critical(self, "Error", f"No se pudo ejecutar principal.py:\n{e}")
+                self.principal_window = PrincipalWindow()
+                self.principal_window.show()
+                self.close()
             else:
                 QMessageBox.critical(self, "Acceso denegado", "Usuario o contraseña incorrectos")
 
