@@ -1,14 +1,13 @@
 import sys
 import os
 import sqlite3
+import subprocess
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout,
     QHBoxLayout, QFrame, QMessageBox
 )
 from PyQt5.QtGui import QPixmap, QFont, QPalette, QBrush
-from PyQt5.QtCore import Qt
-
-from principal import PrincipalWindow  # ✅ Importación directa
+from PyQt5.QtCore import Qt       
 
 class LoginAdmin(QWidget):
     def __init__(self):
@@ -116,7 +115,7 @@ class LoginAdmin(QWidget):
             print("No se encontró la imagen de fondo.")
 
     def verificar_login(self):
-        usuario = self.input_usuario.text()
+        usuario = self.input_usuario.text().lower()  # Convertir el nombre de usuario a minúsculas
         contraseña = self.input_contraseña.text()
 
         if not usuario or not contraseña:
@@ -126,15 +125,32 @@ class LoginAdmin(QWidget):
         try:
             conexion = sqlite3.connect("rrhh.db")
             cursor = conexion.cursor()
-            cursor.execute("SELECT * FROM usuario_rrhh WHERE usuario = ? AND contraseña = ?", (usuario, contraseña))
-            resultado = cursor.fetchone()
 
-            if resultado:
-                self.principal_window = PrincipalWindow()
-                self.principal_window.show()
-                self.close()
+            # Primero verificamos si el usuario pertenece a usuario_rrhh (administradores)
+            cursor.execute("SELECT * FROM usuario_rrhh WHERE usuario = ? AND contraseña = ?", (usuario, contraseña))
+            resultado_admin = cursor.fetchone()
+
+            if resultado_admin:
+                # Si es un administrador, se abre principal.py
+                try:
+                    subprocess.Popen([sys.executable, "principal.py"])
+                    self.close()
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"No se pudo ejecutar principal.py:\n{e}")
             else:
-                QMessageBox.critical(self, "Acceso denegado", "Usuario o contraseña incorrectos")
+                # Si no es administrador, verificamos si es un empleado
+                cursor.execute("SELECT * FROM empleados WHERE LOWER(nombre) = ? AND cc = ?", (usuario, contraseña))
+                resultado_empleado = cursor.fetchone()
+
+                if resultado_empleado:
+                    # Si es un empleado, se abre principalus.py
+                    try:
+                        subprocess.Popen([sys.executable, "principalus.py"])
+                        self.close()
+                    except Exception as e:
+                        QMessageBox.critical(self, "Error", f"No se pudo ejecutar principalus.py:\n{e}")
+                else:
+                    QMessageBox.critical(self, "Acceso denegado", "Usuario o contraseña incorrectos")
 
             cursor.close()
             conexion.close()
